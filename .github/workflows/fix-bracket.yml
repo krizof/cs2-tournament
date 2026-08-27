@@ -1,0 +1,51 @@
+name: Fix bracket geometry
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-bracket.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch bracket geometry
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          repl={
+          'M265 108 H315 V173 H365':'M265 120 H315 V185 H365',
+          'M265 238 H315 V173 H365':'M265 250 H315 V185 H365',
+          'M265 368 H315 V433 H365':'M265 380 H315 V445 H365',
+          'M265 498 H315 V433 H365':'M265 510 H315 V445 H365',
+          'M595 173 H645 V303 H695':'M595 185 H645 V315 H695',
+          'M595 433 H645 V303 H695':'M595 445 H645 V315 H695',
+          'M925 303 H1025':'M925 315 H1025',
+          'id="l3" style="left:360px;top:115px"':'id="l3" style="left:360px;top:95px"',
+          'id="l4" style="left:360px;top:265px"':'id="l4" style="left:360px;top:245px"',
+          'id="l5" style="left:690px;top:190px"':'id="l5" style="left:690px;top:170px"',
+          'id="l6" style="left:1020px;top:190px"':'id="l6" style="left:1020px;top:170px"',
+          'M260 133 H310 V153 H360':'M260 145 H360',
+          'M260 283 H310 V303 H360':'M260 295 H360',
+          'M590 153 H640 V228 H690':'M590 145 H640 V220 H690',
+          'M590 303 H640 V228 H690':'M590 295 H640 V220 H690',
+          'M920 228 H1020':'M920 220 H1020',
+          }
+          missing=[]
+          for a,b in repl.items():
+              if a not in s: missing.append(a)
+              s=s.replace(a,b)
+          if missing:
+              print('Not found:', missing)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Fix bracket connectors and lower bracket alignment"
+          git push
