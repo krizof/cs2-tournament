@@ -1,0 +1,54 @@
+name: Fix player table static
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-player-table-static.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild player table as static HTML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, html
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- PLAYER_TABLE_RECOVERY_V3 -->'
+          if marker in s:
+              s=s.split(marker)[0]
+          players=[
+          ('sbyrezz','sbyrezz','sbyrezz',3104,10,'54.0','1.03','80.7','57.7',0),('sbyrezz','9tailedwins','9tailedwins',2599,10,'56.0','1.10','83.7','53.6',1),('sbyrezz','xortue','xortue',2726,10,'62.0','1.07','79.1','53.0',0),('sbyrezz','serphx','serphx',2244,10,'54.0','0.93','76.5','38.8',0),('sbyrezz','ijoyex','ijoyex',2054,10,'48.0','0.98','76.6','51.5',0),
+          ('rusa i 4 silnih','rusazbs','rusazbs',2913,10,'50.0','1.25','88.8','57.6',0),('rusa i 4 silnih','navodnenie','navodneniee',2042,10,'52.0','0.91','69.8','52.8',0),('rusa i 4 silnih','kesagake','-kesagake',2040,10,'48.0','1.01','75.8','52.2',0),('rusa i 4 silnih','bizoshka','b1zoshka',1679,8,'46.0','0.94','77.7','44.4',1),('rusa i 4 silnih','niksy','NUARRRRRRRRR',1513,7,'48.0','1.10','83.3','49.1',0),
+          ('TEAM TARKOV','vitchy','LiIy',2769,10,'53.3','0.96','83.6','47.3',0),('TEAM TARKOV','akage','akage',2480,10,'58.0','0.98','87.5','51.2',0),('TEAM TARKOV','z0mb1x','z0mbix_',1563,8,'48.0','1.03','74.2','44.3',0),('TEAM TARKOV','zombak','zombak',1377,7,'44.9','0.92','69.4','50.2',0),('TEAM TARKOV','way1ses (сиега)','kakweter',738,2,'50.0','0.94','74.1','48.4',0),
+          ('execute','Ars_voin','Ars_voin',1013,4,'48.0','0.96','74.0','49.3',0),('execute','em0_x','em0_x',1323,6,'54.0','1.09','82.3','52.3',0),('execute','SHINA0606','SHINA0606',1107,5,'56.0','0.93','74.3','39.6',0),('execute','TheLaz1e','TheLaz1e',1369,7,'48.0','0.98','73.5','49.8',0),('execute','n0rkx','n0rkx',991,4,'52.0','1.02','80.8','58.0',0),
+          ('4Uncalib','therezly','GRYVX7',2365,10,'62.0','0.90','81.2','45.8',0),('4Uncalib','yowhymore','yowhymore',1713,8,'76.0','1.21','89.0','58.0',0),('4Uncalib','geks7ation','geks7ation',1451,7,'56.0','0.96','76.3','48.0',0),('4Uncalib','haterd','haterd',1422,7,'50.0','0.78','63.8','42.7',0),('4Uncalib','steinmode','kuden_',831,3,'20.0','0.54','50.1','33.3',0),
+          ('1lousi','qandoni','qandoni',2079,10,'50.0','0.94','73.2','53.6',0),('1lousi','seebooya','seebooya',1777,9,'53.1','0.97','79.4','56.1',0),('1lousi','inuqsui','Eith0',1260,6,'48.0','1.01','79.7','52.5',0),('1lousi','rose1377','Soul_1488',1059,5,'50.0','0.71','60.9','50.0',0),('1lousi','1lousi','whoislousi',677,2,'62.0','0.58','51.9','33.5',0),
+          ('team S4MIBD','anverr','Sarjanedb',1867,9,'66.0','1.01','82.9','46.1',0),('team S4MIBD','prohor','TimurMrzTV',1575,8,'48.0','0.86','74.7','44.9',0),('team S4MIBD','arkel1o','arkel13',1047,4,'—','—','—','—',0),('team S4MIBD','leclermentality','kuper1313',886,3,'47.9','0.78','64.9','38.5',0),('team S4MIBD','deathlessmemory','CaMDuMau',1008,4,'56.1','0.87','70.1','50.8',0),
+          ('tkfrom','nnlsnaya','nnslnaya-_-',1734,8,'60.0','1.21','95.3','53.1',0),('tkfrom','sadmoonsh1ne','sadmoons1ne',1381,7,'50.0','0.95','78.9','52.2',0),('tkfrom','skydeku','skydi3',1000,4,'—','—','—','—',0),('tkfrom','SANYAXAKEP','SANYAXAKEP',214,1,'36.0','0.88','74.2','48.7',0),('tkfrom','eternaldes1re','Desire_dl',0,0,'66.7','1.31','86.3','83.3',0)
+          ]
+          def pct(v): return v if v=='—' else v+'%'
+          rows=[]
+          for team,name,faceit,elo,lvl,wr,kd,adr,entry,repl in players:
+              badge='<span class="rbadge">ЗАМЕНА</span>' if repl else ''
+              cls=' class="replacement"' if repl else ''
+              url='https://www.faceit.com/ru/players/'+faceit
+              rows.append(f'<tr{cls} data-team="{html.escape(team)}"><td><span class="team-dot"></span>{html.escape(team)}</td><td class="player-name">{html.escape(name)}{badge}</td><td>{html.escape(faceit)}</td><td>{elo}</td><td>{lvl}</td><td>{pct(wr)}</td><td>{kd}</td><td>{adr}</td><td>{pct(entry)}</td><td><a class="faceit-link" target="_blank" rel="noopener" href="{html.escape(url)}">Открыть FACEIT ↗</a></td></tr>')
+          body=''.join(rows)
+          s,n=re.subn(r'<tbody[^>]*>.*?</tbody>', '<tbody>'+body+'</tbody>', s, count=1, flags=re.S)
+          if n!=1:
+              raise SystemExit('tbody not found')
+          extra='''\n<script>\n(function(){const sec=document.getElementById('players');if(!sec)return;const inp=sec.querySelector('input'),sel=sec.querySelector('select'),rows=[...sec.querySelectorAll('tbody tr')];const teams=[...new Set(rows.map(r=>r.dataset.team))];if(sel){sel.innerHTML='<option value="">Все команды</option>'+teams.map(t=>'<option value="'+t+'">'+t+'</option>').join('');}const run=()=>{const q=(inp?.value||'').toLowerCase(),f=sel?.value||'';rows.forEach(r=>{const ok=(!q||r.textContent.toLowerCase().includes(q))&&(!f||r.dataset.team===f);r.style.display=ok?'':'none';});};if(inp)inp.addEventListener('input',run);if(sel)sel.addEventListener('change',run);run();})();\n</script>\n</body></html>'''
+          s=s.rstrip()+extra
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Restore all players as static table rows"
+          git push
