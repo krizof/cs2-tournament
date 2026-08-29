@@ -1,0 +1,113 @@
+name: Update execute roster and team names
+on:
+  push:
+    paths:
+      - '.github/workflows/update-execute-and-team-names.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch tournament site
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # 1) Restore M2 as a normal match and put the new team into the old slot.
+          s=re.sub(
+            r'<div class="match upper-match[^>]*id="m2".*?(?=<div class="match upper-match predict-match" id="m3")',
+            '<div class="match upper-match predict-match" id="m2" data-a="TEAM TARKOV" data-b="execute" style="left:35px;top:200px"><div class="head">M2</div><div class="team"><span>TEAM TARKOV</span><span>Seed 3</span></div><div class="team"><span>execute</span><span>Seed 4</span></div></div>\n',
+            s, count=1, flags=re.S
+          )
+
+          # 2) Restore USF1 to normal winner-vs-winner logic.
+          s=re.sub(
+            r'<div class="match upper-match future-match" id="usf1".*?(?=<div class="match upper-match future-match" id="usf2")',
+            '<div class="match upper-match future-match" id="usf1" style="left:365px;top:135px"><div class="head">USF1</div><div class="team"><span>Победитель M1</span></div><div class="team"><span>Победитель M2</span></div></div>',
+            s, count=1, flags=re.S
+          )
+
+          # 3) Restore the full Lower Bracket without BYEs.
+          lower='''<div class="section-title">Lower Bracket</div><div class="scroll"><div class="bracket lower" id="lowerBracket">
+          <div class="round-title" style="left:30px">LOWER R1</div><div class="round-title" style="left:360px">LOWER R2</div><div class="round-title" style="left:690px">LOWER R3</div><div class="round-title" style="left:1020px">LOWER FINAL</div>
+          <svg class="lines" viewBox="0 0 1350 455" preserveAspectRatio="none"><path d="M260 145 H360"/><path d="M260 295 H360"/><path d="M590 145 H640 V220 H690"/><path d="M590 295 H640 V220 H690"/><path d="M920 220 H1020"/></svg>
+          <div class="match lower-match future-match" id="l1" style="left:30px;top:95px"><div class="head">L1</div><div class="team"><span>Проигравший M1</span></div><div class="team"><span>Проигравший M4</span></div></div>
+          <div class="match lower-match future-match" id="l2" style="left:30px;top:245px"><div class="head">L2</div><div class="team"><span>Проигравший M2</span></div><div class="team"><span>Проигравший M3</span></div></div>
+          <div class="match lower-match future-match" id="l3" style="left:360px;top:95px"><div class="head">L3</div><div class="team"><span>Победитель L1</span></div><div class="team"><span>Проигравший USF2</span></div></div>
+          <div class="match lower-match future-match" id="l4" style="left:360px;top:245px"><div class="head">L4</div><div class="team"><span>Победитель L2</span></div><div class="team"><span>Проигравший USF1</span></div></div>
+          <div class="match lower-match future-match" id="l5" style="left:690px;top:170px"><div class="head">L5</div><div class="team"><span>Победитель L3</span></div><div class="team"><span>Победитель L4</span></div></div>
+          <div class="match lower-match future-match" id="l6" style="left:1020px;top:170px"><div class="head">LOWER FINAL</div><div class="team"><span>Победитель L5</span></div><div class="team"><span>Проигравший Upper Final</span></div></div>
+          </div></div>'''
+          s=re.sub(r'<div class="section-title">Lower Bracket</div>.*?(?=</section>\s*<section class="page" id="strength">)', lower, s, count=1, flags=re.S)
+
+          # 4) Replace the five old fromprague rows with execute players.
+          execute_rows='''<tr data-team="execute" data-search="Ars_voin execute"><td><span class="team-dot"></span>execute</td><td class="player-name">Ars_voin</td><td>Ars_voin</td><td>1013</td><td>4</td><td>48.0%</td><td>0.96</td><td>74.0</td><td>49.3%</td><td><a class="faceit-link" href="https://www.faceit.com/ru/players/Ars_voin" target="_blank" rel="noopener">Открыть FACEIT ↗</a></td></tr>
+          <tr data-team="execute" data-search="em0_x execute"><td><span class="team-dot"></span>execute</td><td class="player-name">em0_x</td><td>em0_x</td><td>1323</td><td>6</td><td>54.0%</td><td>1.09</td><td>82.3</td><td>52.3%</td><td><a class="faceit-link" href="https://www.faceit.com/ru/players/em0_x" target="_blank" rel="noopener">Открыть FACEIT ↗</a></td></tr>
+          <tr data-team="execute" data-search="SHINA0606 execute"><td><span class="team-dot"></span>execute</td><td class="player-name">SHINA0606</td><td>SHINA0606</td><td>1107</td><td>5</td><td>56.0%</td><td>0.93</td><td>74.3</td><td>39.6%</td><td><a class="faceit-link" href="https://www.faceit.com/ru/players/SHINA0606" target="_blank" rel="noopener">Открыть FACEIT ↗</a></td></tr>
+          <tr data-team="execute" data-search="TheLaz1e execute"><td><span class="team-dot"></span>execute</td><td class="player-name">TheLaz1e</td><td>TheLaz1e</td><td>1369</td><td>7</td><td>48.0%</td><td>0.98</td><td>73.5</td><td>49.8%</td><td><a class="faceit-link" href="https://www.faceit.com/ru/players/TheLaz1e" target="_blank" rel="noopener">Открыть FACEIT ↗</a></td></tr>
+          <tr data-team="execute" data-search="n0rkx execute"><td><span class="team-dot"></span>execute</td><td class="player-name">n0rkx</td><td>n0rkx</td><td>991</td><td>4</td><td>52.0%</td><td>1.02</td><td>80.8</td><td>58.0%</td><td><a class="faceit-link" href="https://www.faceit.com/ru/players/n0rkx" target="_blank" rel="noopener">Открыть FACEIT ↗</a></td></tr>'''
+          old_rows=list(re.finditer(r'<tr[^>]*data-team="fromprague"[^>]*>.*?</tr>',s,re.S))
+          if old_rows:
+              s=s[:old_rows[0].start()]+execute_rows+s[old_rows[-1].end():]
+
+          # 5) Rename teams everywhere else.
+          s=s.replace('yowhymore','4Uncalib')
+          s=s.replace('anverr','team S4MIBD')
+          s=s.replace('akage','TEAM TARKOV')
+          s=s.replace('fromprague','execute')
+
+          # 6) Rebuild strength page with current team names and execute stats.
+          def card(rank,name,power,avg,med,wr,kd,adr,entry,badge=''):
+              b=f' <span class="badge">{badge}</span>' if badge else ''
+              return f'''<article class="strength-card"><div class="rank">#{rank}</div><div class="team-name">{name}{b}</div><div class="power-line"><span>Power</span><strong>{power}</strong></div><div class="bar"><i style="width:{power}%"></i></div><div class="statgrid"><div><span>Avg Elo</span><b>{avg}</b></div><div><span>Median</span><b>{med}</b></div><div><span>WR 50</span><b>{wr}</b></div><div><span>K/D 50</span><b>{kd}</b></div><div><span>ADR 50</span><b>{adr}</b></div><div><span>Entry</span><b>{entry}</b></div></div></article>'''
+          strength='''<section class="page" id="strength"><div class="hero"><div><h2>Сила команд</h2><p>Power — внутренний индекс для сравнения команд. Основной вес дают Elo и медианный Elo, свежая форма используется как корректировка.</p></div></div><div class="strength-grid">'''+''.join([
+              card(1,'sbyrezz',91,2545,2599,'54.8%','1.02','79.3','50.9%','1 замена'),
+              card(2,'rusa i 4 silnih',78,2037,2040,'48.8%','1.04','79.1','51.2%','1 замена'),
+              card(3,'TEAM TARKOV',68,1785,1563,'50.9%','0.97','77.8','48.3%'),
+              card(4,'4Uncalib',61,1556,1451,'52.8%','0.88','72.1','45.6%'),
+              card(5,'1lousi',54,1370,1260,'52.6%','0.84','69.0','49.2%'),
+              card(6,'team S4MIBD',52,1277,1047,'54.5%','0.88','73.2','45.1%'),
+              card(7,'execute',50,1161,1107,'51.6%','1.00','77.0','49.8%','новая команда'),
+              card(8,'tkfrom',48,866,1000,'53.2%','1.09','83.7','59.3%'),
+          ])+'''</div><div class="note" style="margin-top:12px;color:#8e98a7;font-size:11px">execute заняла слот снявшейся команды. Сетка при этом не пересевалась.</div></section>'''
+          s=re.sub(r'<section class="page" id="strength">.*?(?=<section class="page" id="players">)',strength+'\n',s,count=1,flags=re.S)
+
+          # 7) Remove the old withdrawal/prize warning from the rules page.
+          s=re.sub(r'<div class="prize-alert">.*?</div>','',s,count=1,flags=re.S)
+
+          # 8) Replace seeding explanation with the current situation.
+          modal='''<div class="modal-backdrop" id="whyModal"><div class="modal-card"><button class="modal-close" id="modalClose">×</button><h3>Почему сетка такая</h3><p>Сетка была сформирована до финальных изменений составов и после публикации не пересевалась.</p><p>Команда execute заняла освободившийся слот команды fromprague, поэтому в первом раунде играет против TEAM TARKOV. Остальные пары также сохранены без изменений.</p><p>4Uncalib — это прежняя команда yowhymore, team S4MIBD — прежняя команда anverr, TEAM TARKOV — прежняя команда akage. Изменились названия команд, а не их места в сетке.</p><p>Lower Bracket использует перекрёстный переход проигравших, чтобы уменьшить вероятность моментальных реваншей.</p><p>Раздел «Сила команд» показывает текущую оценку составов, а сетка — уже утверждённое распределение участников.</p></div></div>'''
+          s=re.sub(r'<div class="modal-backdrop" id="whyModal">.*?(?=<script>)',modal+'\n',s,count=1,flags=re.S)
+
+          # 9) Replace JS so filters, modal and forecast match the new names/slot.
+          script=r'''<script>
+          document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.page).classList.add('active')}));
+          const whyBtn=document.getElementById('whyBtn'), whyModal=document.getElementById('whyModal'), modalClose=document.getElementById('modalClose');
+          if(whyBtn&&whyModal) whyBtn.onclick=()=>whyModal.classList.add('open');
+          if(modalClose&&whyModal) modalClose.onclick=()=>whyModal.classList.remove('open');
+          if(whyModal) whyModal.onclick=e=>{if(e.target===whyModal)whyModal.classList.remove('open')};
+          const search=document.querySelector('.search'), filter=document.querySelector('.filter');
+          function applyFilter(){const q=(search?.value||'').toLowerCase(),f=filter?.value||'';document.querySelectorAll('#players tbody tr').forEach(r=>{const txt=r.textContent.toLowerCase(),team=r.dataset.team||'';r.style.display=(!q||txt.includes(q))&&(!f||team===f)?'':'none'})}
+          if(search)search.oninput=applyFilter;if(filter)filter.onchange=applyFilter;
+          const snapshots={};document.querySelectorAll('.match').forEach(m=>snapshots[m.id]=m.innerHTML);
+          function setTeams(id,a,b,winner){const m=document.getElementById(id);if(!m)return;const rows=m.querySelectorAll('.team');if(rows[0]){rows[0].innerHTML='<span>'+a+'</span>';rows[0].classList.toggle('pred-win',winner===a);rows[0].classList.toggle('pred-lose',winner!==a)}if(rows[1]){rows[1].innerHTML='<span>'+b+'</span>';rows[1].classList.toggle('pred-win',winner===b);rows[1].classList.toggle('pred-lose',winner!==b)}}
+          function forecast(on){const root=document.getElementById('bracket');document.body.classList.toggle('predict-mode',on);document.getElementById('predictBtn')?.classList.toggle('active',on);if(!on){document.querySelectorAll('.match').forEach(m=>{if(snapshots[m.id]!=null)m.innerHTML=snapshots[m.id]});return}setTeams('m1','rusa i 4 silnih','4Uncalib','rusa i 4 silnih');setTeams('m2','TEAM TARKOV','execute','TEAM TARKOV');setTeams('m3','sbyrezz','team S4MIBD','sbyrezz');setTeams('m4','1lousi','tkfrom','1lousi');setTeams('usf1','rusa i 4 silnih','TEAM TARKOV','rusa i 4 silnih');setTeams('usf2','sbyrezz','1lousi','sbyrezz');setTeams('uf','rusa i 4 silnih','sbyrezz','sbyrezz');setTeams('l1','4Uncalib','tkfrom','4Uncalib');setTeams('l2','execute','team S4MIBD','team S4MIBD');setTeams('l3','4Uncalib','1lousi','4Uncalib');setTeams('l4','team S4MIBD','TEAM TARKOV','TEAM TARKOV');setTeams('l5','4Uncalib','TEAM TARKOV','TEAM TARKOV');setTeams('l6','TEAM TARKOV','rusa i 4 silnih','rusa i 4 silnih');setTeams('gf','sbyrezz','rusa i 4 silnih','rusa i 4 silnih')}
+          let pred=false;document.getElementById('predictBtn')?.addEventListener('click',()=>{pred=!pred;forecast(pred)});
+          </script>'''
+          s=re.sub(r'<script>.*?</script>',script,s,count=1,flags=re.S)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Replace withdrawn team with execute and rename teams"
+          git push
