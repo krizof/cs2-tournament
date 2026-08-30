@@ -10,13 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rename tkfrom team
+      - name: Add Cor172 temporary substitute
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('tkfrom','Discipline Team')
+
+          # Remove an older Cor172 temporary row if this workflow is re-run.
+          s=re.sub(r'<tr class="replacement temp-sub" data-team="execute">.*?Cor172.*?</tr>', '', s, flags=re.S)
+
+          # Add Cor172 directly after n0rkx while keeping n0rkx in the tournament roster.
+          cor_row='''<tr class="replacement temp-sub" data-team="execute"><td><span class="team-dot"></span>execute</td><td class="player-name">Cor172<span class="rbadge">НА 1 МАТЧ</span></td><td>Cor172</td><td>779</td><td>3</td><td>54.0%</td><td>0.80</td><td>71.3</td><td>44.3%</td><td><a class="faceit-link" target="_blank" rel="noopener" href="https://www.faceit.com/ru/players/Cor172">Открыть FACEIT ↗</a></td></tr>'''
+
+          pattern=r'(<tr[^>]*data-team="execute"[^>]*>.*?<td class="player-name">n0rkx(?:<span.*?</span>)?</td>.*?</tr>)'
+          s,n=re.subn(pattern, r'\1'+cor_row, s, count=1, flags=re.S)
+          if n!=1:
+              raise SystemExit('n0rkx row not found')
+
+          # Add a visible note explaining that this is only for execute's first match.
+          note='<div class="note" style="margin-top:8px;color:#f2b35f;font-size:11px"><b>execute:</b> на первый матч Cor172 играет вместо n0rkx. Замена действует только на одну игру.</div>'
+          if 'Cor172 играет вместо n0rkx' not in s:
+              anchor='execute заняла слот снявшейся команды; SHINA0606 заменён на andr_soma. Сетка при этом не пересевалась.'
+              s=s.replace(anchor, anchor+note)
+
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit fix
@@ -24,5 +43,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Rename tkfrom to Discipline Team"
+          git diff --cached --quiet || git commit -m "Add Cor172 temporary substitute for execute"
           git push
