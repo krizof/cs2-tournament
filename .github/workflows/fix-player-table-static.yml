@@ -10,48 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update live bracket to current stage
+      - name: Fix match formats
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
-
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
-          def replace_match(mid, new_html):
-              global s
-              pattern=rf'<div class="match[^>]*id="{re.escape(mid)}".*?</div></div>'
-              s2,n=re.subn(pattern,new_html,s,count=1,flags=re.S)
-              if n!=1:
-                  raise SystemExit(f'{mid} not replaced')
-              s=s2
+          # Только Lower Final и Grand Final играются BO3.
+          s=s.replace('UPPER FINAL · BO3', 'UPPER FINAL · BO1')
+          s=s.replace('LOWER FINAL · L6', 'LOWER FINAL · BO3 · L6')
 
-          done='border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)'
-
-          replace_match('m1', f'''<div class="match upper-match predict-match" id="m1" data-a="rusa i 4 silnih" data-b="4Uncalib" style="left:35px;top:70px;{done}"><div class="head">M1 · ЗАВЕРШЕН</div><div class="team"><span>rusa i 4 silnih</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>4Uncalib</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-          replace_match('m2', f'''<div class="match upper-match predict-match" id="m2" data-a="TEAM TARKOV" data-b="execute" style="left:35px;top:200px;{done}"><div class="head">M2 · ЗАВЕРШЕН</div><div class="team"><span>TEAM TARKOV</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>execute</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-          replace_match('m3', f'''<div class="match upper-match predict-match" id="m3" data-a="sbyrezz" data-b="team S4MIBD" style="left:35px;top:330px;{done}"><div class="head">M3 · ЗАВЕРШЕН</div><div class="team"><span>sbyrezz</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>team S4MIBD</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-          replace_match('m4', f'''<div class="match upper-match predict-match" id="m4" data-a="Discipline Team" data-b="heart attack" style="left:35px;top:460px;{done}"><div class="head">M4 · ЗАВЕРШЕН</div><div class="team"><span>Discipline Team</span><span style="color:#ff7058;font-weight:900">0</span></div><div class="team"><span>heart attack</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div></div>''')
-
-          replace_match('usf1', f'''<div class="match upper-match predict-match" id="usf1" data-a="rusa i 4 silnih" data-b="TEAM TARKOV" style="left:365px;top:135px;{done}"><div class="head">USF1 · ЗАВЕРШЕН</div><div class="team"><span>rusa i 4 silnih</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>TEAM TARKOV</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-          replace_match('usf2', f'''<div class="match upper-match predict-match" id="usf2" data-a="sbyrezz" data-b="heart attack" style="left:365px;top:395px;{done}"><div class="head">USF2 · ЗАВЕРШЕН</div><div class="team"><span>sbyrezz</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>heart attack</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-
-          replace_match('uf', '''<div class="match final future-match" id="uf" data-a="rusa i 4 silnih" data-b="sbyrezz" style="left:695px;top:265px"><div class="head">UPPER FINAL · BO3</div><div class="team"><span>rusa i 4 silnih</span></div><div class="team"><span>sbyrezz</span></div></div>''')
-
-          replace_match('l1', '''<div class="match lower-match future-match" id="l1" data-a="4Uncalib" data-b="execute" style="left:30px;top:95px"><div class="head">LOWER R1 · L1</div><div class="team"><span>4Uncalib</span></div><div class="team"><span>execute</span></div></div>''')
-          replace_match('l2', '''<div class="match lower-match future-match" id="l2" data-a="team S4MIBD" data-b="Discipline Team" style="left:30px;top:245px"><div class="head">LOWER R1 · L2</div><div class="team"><span>team S4MIBD</span></div><div class="team"><span>Discipline Team</span></div></div>''')
-          replace_match('l3', '''<div class="match lower-match future-match" id="l3" style="left:360px;top:95px"><div class="head">LOWER R2 · L3</div><div class="team"><span>heart attack</span></div><div class="team"><span>Победитель L1</span></div></div>''')
-          replace_match('l4', '''<div class="match lower-match future-match" id="l4" style="left:360px;top:245px"><div class="head">LOWER R2 · L4</div><div class="team"><span>TEAM TARKOV</span></div><div class="team"><span>Победитель L2</span></div></div>''')
-          replace_match('l5', '''<div class="match lower-match future-match" id="l5" style="left:690px;top:170px"><div class="head">LOWER R3 · L5</div><div class="team"><span>Победитель L3</span></div><div class="team"><span>Победитель L4</span></div></div>''')
-          replace_match('l6', '''<div class="match lower-match final future-match" id="l6" style="left:1020px;top:170px"><div class="head">LOWER FINAL · L6</div><div class="team"><span>Победитель L5</span></div><div class="team"><span>Проигравший Upper Final</span></div></div>''')
+          # Поправляем возможные формулировки в регламенте.
+          replacements = {
+              'Upper Final и Grand Final — BO3': 'Lower Final и Grand Final — BO3',
+              'Upper Final + Grand Final — BO3': 'Lower Final + Grand Final — BO3',
+              'Upper Final и Grand Final — BO3.': 'Lower Final и Grand Final — BO3.',
+              'Upper Final + Grand Final — BO3.': 'Lower Final + Grand Final — BO3.',
+              'Upper Final и Grand Final BO3': 'Lower Final и Grand Final BO3',
+              'Upper Final + Grand Final BO3': 'Lower Final + Grand Final BO3',
+              'Большинство матчей BO1. Upper Final и Grand Final — BO3.': 'Все матчи BO1, кроме Lower Final и Grand Final — они BO3.',
+              'Большинство матчей — BO1. Upper Final и Grand Final — BO3.': 'Все матчи BO1, кроме Lower Final и Grand Final — они BO3.',
+          }
+          for old,new in replacements.items():
+              s=s.replace(old,new)
 
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit bracket update
+      - name: Commit format update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Update bracket to upper final stage"
+          git diff --cached --quiet || git commit -m "Use BO3 only for lower final and grand final"
           git push
