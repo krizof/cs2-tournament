@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update live bracket state
+      - name: Update bracket and rename team
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -18,6 +18,7 @@ jobs:
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
+          NEW='3HAKOMbIE_SKYWALKERA'
 
           def replace_match(match_id, html):
               global s
@@ -26,29 +27,44 @@ jobs:
               if n!=1:
                   raise SystemExit(f'{match_id} not found')
 
-          done_style='border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)'
+          done='border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)'
 
-          replace_match('uf', f'''<div class="match final predict-match" id="uf" data-a="rusa i 4 silnih" data-b="sbyrezz" style="left:695px;top:265px;{done_style}"><div class="head">UPPER FINAL · BO1 · ЗАВЕРШЕН</div><div class="team"><span>rusa i 4 silnih</span><span style="color:#ff7058;font-weight:900">0</span></div><div class="team"><span>sbyrezz</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div></div>''')
+          # Upper Final is already complete: sbyrezz team won 1:0.
+          replace_match('uf', f'''<div class="match final predict-match" id="uf" data-a="rusa i 4 silnih" data-b="{NEW}" style="left:695px;top:265px;{done}"><div class="head">UPPER FINAL · BO1 · ЗАВЕРШЕН</div><div class="team"><span>rusa i 4 silnih</span><span style="color:#ff7058;font-weight:900">0</span></div><div class="team"><span>{NEW}</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div></div>''')
 
-          replace_match('gf', '''<div class="match grand future-match" id="gf" style="left:1025px;top:265px"><div class="head">GRAND FINAL · BO3</div><div class="team"><span>sbyrezz</span></div><div class="team"><span>Lower Champion</span></div></div>''')
+          replace_match('gf', f'''<div class="match grand future-match" id="gf" style="left:1025px;top:265px"><div class="head">GRAND FINAL · BO3</div><div class="team"><span>{NEW}</span></div><div class="team"><span>Lower Champion</span></div></div>''')
 
-          replace_match('l1', f'''<div class="match lower-match predict-match" id="l1" data-a="4Uncalib" data-b="execute" style="left:30px;top:95px;{done_style}"><div class="head">LOWER R1 · L1 · ЗАВЕРШЕН</div><div class="team"><span>4Uncalib</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>execute</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-
-          replace_match('l2', f'''<div class="match lower-match predict-match" id="l2" data-a="team S4MIBD" data-b="Discipline Team" style="left:30px;top:245px;{done_style}"><div class="head">LOWER R1 · L2 · ЗАВЕРШЕН</div><div class="team"><span>team S4MIBD</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>Discipline Team</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-
+          # Current Lower state from Challonge screenshot.
           replace_match('l3', '''<div class="match lower-match future-match" id="l3" data-a="heart attack" data-b="4Uncalib" style="left:360px;top:95px"><div class="head">LOWER R2 · L3</div><div class="team"><span>heart attack</span></div><div class="team"><span>4Uncalib</span></div></div>''')
 
-          replace_match('l4', '''<div class="match lower-match future-match" id="l4" data-a="TEAM TARKOV" data-b="team S4MIBD" style="left:360px;top:245px"><div class="head">LOWER R2 · L4</div><div class="team"><span>TEAM TARKOV</span></div><div class="team"><span>team S4MIBD</span></div></div>''')
+          replace_match('l4', f'''<div class="match lower-match predict-match" id="l4" data-a="TEAM TARKOV" data-b="team S4MIBD" style="left:360px;top:245px;{done}"><div class="head">LOWER R2 · L4 · ЗАВЕРШЕН</div><div class="team"><span>TEAM TARKOV</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>team S4MIBD</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
+
+          replace_match('l5', '''<div class="match lower-match future-match" id="l5" style="left:690px;top:170px"><div class="head">LOWER R3 · L5</div><div class="team"><span>Победитель L3</span></div><div class="team"><span>TEAM TARKOV</span></div></div>''')
 
           replace_match('l6', '''<div class="match lower-match final future-match" id="l6" style="left:1020px;top:170px"><div class="head">LOWER FINAL · BO3 · L6</div><div class="team"><span>Победитель L5</span></div><div class="team"><span>rusa i 4 silnih</span></div></div>''')
 
+          # Rename the TEAM everywhere, but keep the actual player's nickname/FACEIT 'sbyrezz'.
+          s=s.replace('data-team="sbyrezz"', f'data-team="{NEW}"')
+          s=s.replace('data-a="sbyrezz"', f'data-a="{NEW}"')
+          s=s.replace('data-b="sbyrezz"', f'data-b="{NEW}"')
+          s=s.replace("'sbyrezz'", f"'{NEW}'")
+          s=s.replace('"sbyrezz"', f'"{NEW}"')
+          s=s.replace('<div class="team-name">sbyrezz', f'<div class="team-name">{NEW}')
+          s=s.replace('<span>sbyrezz</span>', f'<span>{NEW}</span>')
+
+          # In the player table only the team column changes; player nickname and FACEIT remain sbyrezz.
+          s=re.sub(r'(<tr[^>]*data-team="'+re.escape(NEW)+r'"[^>]*>\s*<td><span class="team-dot"></span>)sbyrezz(</td>)', rf'\1{NEW}\2', s)
+
+          # Restore the real player nickname/profile wherever a broad quoted replacement could touch it.
+          s=s.replace('href="https://www.faceit.com/ru/players/'+NEW+'"', 'href="https://www.faceit.com/ru/players/sbyrezz"')
+          s=s.replace('>'+NEW+'</td><td>'+NEW+'</td><td>3104', '>sbyrezz</td><td>sbyrezz</td><td>3104')
+
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit bracket update
+      - name: Commit update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Update live tournament bracket"
+          git diff --cached --quiet || git commit -m "Update lower bracket and rename sbyrezz team"
           git push
-# refreshed 2026-08-30
