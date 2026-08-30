@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update latest lower bracket results
+      - name: Advance TEAM TARKOV to lower final
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -28,13 +28,9 @@ jobs:
 
           done='border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)'
 
-          repl('l3', f'''<div class="match lower-match predict-match" id="l3" data-a="heart attack" data-b="4Uncalib" style="left:360px;top:95px;{done}"><div class="head">LOWER R2 · L3 · ЗАВЕРШЕН</div><div class="team"><span>heart attack</span><span style="color:#ff7058;font-weight:900">0</span></div><div class="team"><span>4Uncalib</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div></div>''')
+          repl('l5', f'''<div class="match lower-match predict-match" id="l5" data-a="4Uncalib" data-b="TEAM TARKOV" style="left:690px;top:170px;{done}"><div class="head">LOWER R3 · L5 · ЗАВЕРШЕН</div><div class="team"><span>4Uncalib</span><span style="color:#ff7058;font-weight:900">0</span></div><div class="team"><span>TEAM TARKOV</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div></div>''')
 
-          repl('l4', f'''<div class="match lower-match predict-match" id="l4" data-a="TEAM TARKOV" data-b="team S4MIBD" style="left:360px;top:245px;{done}"><div class="head">LOWER R2 · L4 · ЗАВЕРШЕН</div><div class="team"><span>TEAM TARKOV</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>team S4MIBD</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
-
-          repl('l5', '''<div class="match lower-match future-match" id="l5" data-a="4Uncalib" data-b="TEAM TARKOV" style="left:690px;top:170px"><div class="head">LOWER R3 · L5</div><div class="team"><span>4Uncalib</span></div><div class="team"><span>TEAM TARKOV</span></div></div>''')
-
-          repl('l6', '''<div class="match lower-match final future-match" id="l6" style="left:1020px;top:170px"><div class="head">LOWER FINAL · BO3 · L6</div><div class="team"><span>Победитель L5</span></div><div class="team"><span>rusa i 4 silnih</span></div></div>''')
+          repl('l6', '''<div class="match lower-match final future-match" id="l6" data-a="TEAM TARKOV" data-b="rusa i 4 silnih" style="left:1020px;top:170px"><div class="head">LOWER FINAL · BO3 · L6</div><div class="team"><span>TEAM TARKOV</span></div><div class="team"><span>rusa i 4 silnih</span></div></div>''')
 
           p.write_text(s,encoding='utf-8')
           PY
@@ -43,5 +39,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Update lower bracket after latest matches"
+          git diff --cached --quiet || git commit -m "Advance TEAM TARKOV to lower final"
           git push
