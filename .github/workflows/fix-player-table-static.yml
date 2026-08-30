@@ -10,44 +10,56 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update first completed matches
+      - name: Correct live tournament bracket
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
-          replacements={
-            '<span>rusa i 4 silnih</span><span>Seed 2</span>':'<span>rusa i 4 silnih</span><span style="color:#56d294;font-weight:900">1 · WIN</span>',
-            '<span>4Uncalib</span><span>Seed 5</span>':'<span>4Uncalib</span><span style="color:#ff7058;font-weight:900">0</span>',
-            '<span>sbyrezz</span><span>Seed 1</span>':'<span>sbyrezz</span><span style="color:#56d294;font-weight:900">1 · WIN</span>',
-            '<span>team S4MIBD</span><span>Seed 7</span>':'<span>team S4MIBD</span><span style="color:#ff7058;font-weight:900">0</span>',
-            '<span>Победитель M1</span>':'<span>rusa i 4 silnih</span>',
-            '<span>Победитель M3</span>':'<span>sbyrezz</span>',
-            '<span>Проигравший M1</span>':'<span>4Uncalib</span>',
-            '<span>Проигравший M3</span>':'<span>team S4MIBD</span>',
-          }
+          def replace_match(mid, new_html):
+              global s
+              pattern=rf'<div class="match[^>]*id="{re.escape(mid)}".*?</div></div>'
+              s2,n=re.subn(pattern,new_html,s,count=1,flags=re.S)
+              if n==1:
+                  s=s2
+              else:
+                  print(f'warning: {mid} not replaced')
 
-          for old,new in replacements.items():
-              s=s.replace(old,new)
+          done_style='border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)'
 
-          # Mark completed Round 1 cards visually without changing bracket geometry.
-          s=s.replace('id="m1" data-a=', 'id="m1" style="border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)" data-a=', 1) if 'id="m1" style=' not in s else s
-          s=s.replace('id="m3" data-a=', 'id="m3" style="border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)" data-a=', 1) if 'id="m3" style=' not in s else s
+          replace_match('m1', f'''<div class="match upper-match predict-match" id="m1" data-a="rusa i 4 silnih" data-b="4Uncalib" style="left:35px;top:70px;{done_style}"><div class="head">M1 · ЗАВЕРШЕН</div><div class="team"><span>rusa i 4 silnih</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>4Uncalib</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
 
-          # The cards already have positioning styles later in the tag. Merge duplicate style attributes safely.
-          s=s.replace('id="m1" style="border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)" data-a="rusa i 4 silnih" data-b="4Uncalib" style="left:35px;top:70px"',
-                      'id="m1" data-a="rusa i 4 silnih" data-b="4Uncalib" style="left:35px;top:70px;border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)"')
-          s=s.replace('id="m3" style="border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)" data-a="sbyrezz" data-b="team S4MIBD" style="left:35px;top:330px"',
-                      'id="m3" data-a="sbyrezz" data-b="team S4MIBD" style="left:35px;top:330px;border-color:#3d9f6c;box-shadow:0 0 0 1px rgba(86,210,148,.18)"')
+          replace_match('m2', f'''<div class="match upper-match predict-match" id="m2" data-a="TEAM TARKOV" data-b="execute" style="left:35px;top:200px;{done_style}"><div class="head">M2 · ЗАВЕРШЕН</div><div class="team"><span>TEAM TARKOV</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>execute</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
+
+          replace_match('m3', f'''<div class="match upper-match predict-match" id="m3" data-a="sbyrezz" data-b="team S4MIBD" style="left:35px;top:330px;{done_style}"><div class="head">M3 · ЗАВЕРШЕН</div><div class="team"><span>sbyrezz</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div><div class="team"><span>team S4MIBD</span><span style="color:#ff7058;font-weight:900">0</span></div></div>''')
+
+          replace_match('m4', f'''<div class="match upper-match predict-match" id="m4" data-a="Discipline Team" data-b="heart attack" style="left:35px;top:460px;{done_style}"><div class="head">M4 · ЗАВЕРШЕН</div><div class="team"><span>Discipline Team</span><span style="color:#ff7058;font-weight:900">0</span></div><div class="team"><span>heart attack</span><span style="color:#56d294;font-weight:900">1 · WIN</span></div></div>''')
+
+          replace_match('usf1', '''<div class="match upper-match future-match" id="usf1" data-a="rusa i 4 silnih" data-b="TEAM TARKOV" style="left:365px;top:135px"><div class="head">USF1</div><div class="team"><span>rusa i 4 silnih</span></div><div class="team"><span>TEAM TARKOV</span></div></div>''')
+          replace_match('usf2', '''<div class="match upper-match future-match" id="usf2" data-a="sbyrezz" data-b="heart attack" style="left:365px;top:395px"><div class="head">USF2</div><div class="team"><span>sbyrezz</span></div><div class="team"><span>heart attack</span></div></div>''')
+
+          # Correct Challonge-style lower bracket from the supplied screenshot:
+          # loser M1 vs loser M2; loser M3 vs loser M4.
+          replace_match('l1', '''<div class="match lower-match future-match" id="l1" data-a="4Uncalib" data-b="execute" style="left:30px;top:95px"><div class="head">LOWER R1 · L1</div><div class="team"><span>4Uncalib</span></div><div class="team"><span>execute</span></div></div>''')
+          replace_match('l2', '''<div class="match lower-match future-match" id="l2" data-a="team S4MIBD" data-b="Discipline Team" style="left:30px;top:245px"><div class="head">LOWER R1 · L2</div><div class="team"><span>team S4MIBD</span></div><div class="team"><span>Discipline Team</span></div></div>''')
+          replace_match('l3', '''<div class="match lower-match future-match" id="l3" style="left:360px;top:95px"><div class="head">LOWER R2 · L3</div><div class="team"><span>Победитель L1</span></div><div class="team"><span>Проигравший USF2</span></div></div>''')
+          replace_match('l4', '''<div class="match lower-match future-match" id="l4" style="left:360px;top:245px"><div class="head">LOWER R2 · L4</div><div class="team"><span>Победитель L2</span></div><div class="team"><span>Проигравший USF1</span></div></div>''')
+          replace_match('l5', '''<div class="match lower-match future-match" id="l5" style="left:690px;top:170px"><div class="head">LOWER R3 · L5</div><div class="team"><span>Победитель L3</span></div><div class="team"><span>Победитель L4</span></div></div>''')
+          replace_match('l6', '''<div class="match lower-match final future-match" id="l6" style="left:1020px;top:170px"><div class="head">LOWER FINAL · L6</div><div class="team"><span>Победитель L5</span></div><div class="team"><span>Проигравший Upper Final</span></div></div>''')
+
+          # Remove stale explanation of the old cross-drop structure if it is still present.
+          s=s.replace('Lower Bracket сделан через cross-drop, чтобы снизить шанс мгновенных рематчей.', 'Lower Bracket приведён к актуальной турнирной сетке Challonge.')
+          s=s.replace('Проигравший M1 играет с проигравшим M4, а проигравший M2 — с проигравшим M3.', 'В Lower R1: проигравший M1 играет с проигравшим M2, а проигравший M3 — с проигравшим M4.')
 
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit fix
+      - name: Commit bracket update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Update bracket after M1 and M3"
+          git diff --cached --quiet || git commit -m "Correct bracket after all Round 1 matches"
           git push
